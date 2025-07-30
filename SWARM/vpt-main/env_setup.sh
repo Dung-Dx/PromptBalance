@@ -1,3 +1,4 @@
+#python version 3.7
 pip install tensorflow==2.8.0
 
 # specifying tfds versions is important to reproduce our results
@@ -24,6 +25,4 @@ pip install ml-collections
 pip install submitit -U
 pip install slurm_gpustat
 
-#############
-pip install typing-extensions==3.7.4.3
-conda install -c conda-forge cudnn=8.0.5.39
+

@@ -5612,7 +5612,7 @@ class BadVPT_2stage_modify2(Trainer):
                 logger.info("No improvement. Breaking out of loop.")
                 break
         # torch.save(self.model,"shallow50_8_badvpt_modify_dmlab.pt")
-        # torch.save(self.trigger,"shallow50_8_badvpt_trigger_modify_dmlab.pt")
+        torch.save(self.trigger,"/data2/uittogether/LuuTru/Dungdm/PromptBalance/Model/cifar_trigger.pt")
 
 
         # patience = 0
