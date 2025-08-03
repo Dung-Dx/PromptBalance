@@ -6,7 +6,8 @@ pip install tfds-nightly==4.4.0.dev202201080107
 pip install opencv-python
 pip install tensorflow-addons==0.16.1
 pip install mock
-
+pip install typeguard==2.13.3
+pip install typing-extensions==3.7.4.3
 
 conda install pytorch==1.7.1 torchvision==0.8.2 torchaudio==0.7.2 cudatoolkit=11.0 -c pytorch
 
@@ -24,5 +25,3 @@ pip install ml-collections
 # Optional: for slurm jobs
 pip install submitit -U
 pip install slurm_gpustat
-
-
