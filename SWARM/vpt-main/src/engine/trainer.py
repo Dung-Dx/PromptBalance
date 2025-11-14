@@ -3822,9 +3822,9 @@ class BadVPT_Scaleup(Trainer):
         self.evaluator = evaluator
         self.cpu_device = torch.device("cpu")
 
-        # self.trigger=torch.load("shallow50_8_badvpt_trigger_modify_eurosat.pt")
-        self.model=torch.load("shallow50_16_tuap_caltech101.pt").to(self.device)
-        self.poisonedtestset=torch.load("shallow50_16_tuap_testsets_caltech101.pth")
+        self.trigger=torch.load(f"/datastore/uittogether/LuuTru/Dungdm/PromptBalance/Model/Balance_{self.cfg.DATA.NAME}_trigger.pt")
+        self.model=torch.load(f"/datastore/uittogether/LuuTru/Dungdm/PromptBalance/Model/Balance_{self.cfg.DATA.NAME}_model.pt").to(self.device)
+        # self.poisonedtestset=torch.load("shallow50_16_tuap_testsets_caltech101.pth")
         # self.encoder=torch.load("encoder_caltech101.pt").to(self.device)
         from ..data.datasets.tf_dataset import TFDataset
         self.traindataset = TFDataset(cfg, "train")
@@ -3836,30 +3836,30 @@ class BadVPT_Scaleup(Trainer):
     def train_classifier(self, train_loader, val_loader, test_loader):
         logger.info("Test Stage!")
         self.model.eval()
-        # self.trigger.eval()
-        # self.model.enc.transformer.on = True
+        self.trigger.eval()
+        self.model.enc.transformer.on = False
         sampler=None
         test_loader=torch.utils.data.DataLoader(
-            self.poisonedtestset,
+            self.testdatasets,
             batch_size=20,
             shuffle=False,
             sampler=sampler,
             num_workers=self.cfg.DATA.NUM_WORKERS,
             pin_memory=self.cfg.DATA.PIN_MEMORY,
-            drop_last=True,
+            drop_last=False,
         )
 
         noise_trigger=0.02 * torch.rand(size=[3,224,224],device=self.device)
 
-        decisions = np.empty((10000, 11))
+        decisions = np.empty((3000, 11))
         labels=[]
         i=0
         # secret = torch.FloatTensor(np.random.binomial(1, .5, 20).tolist()).to(self.device)
         for idx, input_data in enumerate(test_loader):
-            if idx>=264:
+            if idx>=150:
                 break
-            # X, targets = self.get_input(input_data)
-            X, targets = input_data[0],input_data[1]
+            X, targets = self.get_input(input_data)
+            # X, targets = input_data[0],input_data[1]
             X=X.to(self.device)
             # len = X.shape[0]
             # pos_len = int(len * 1)
@@ -3883,11 +3883,11 @@ class BadVPT_Scaleup(Trainer):
                 decisions[i * 20:(i + 1) * 20, (h - 1)] = torch.max(self.model(img_batch_re), 1)[1].detach().cpu().numpy()
             i+=1
         print(decisions)
-        labels=np.array(labels).reshape(10000,1)
-        print(np.mean(decisions[:, 0] == np.reshape(labels,  10000)))
-        a = decisions[decisions[:, 0] == np.reshape(labels,  10000)]
+        labels=np.array(labels).reshape(3000,1)
+        print(np.mean(decisions[:, 0] == np.reshape(labels,  3000)))
+        a = decisions[decisions[:, 0] == np.reshape(labels,  3000)]
         print(a.shape)
-        np.save("eurosat_tuap.npy", decisions)
+        np.save(f"/datastore/uittogether/LuuTru/Dungdm/PromptBalance/Model/Balance_{self.cfg.DATA.NAME}_clean.npy", decisions)
 
 
 
@@ -5611,8 +5611,9 @@ class BadVPT_2stage_modify2(Trainer):
             if patience >= self.cfg.SOLVER.PATIENCE:
                 logger.info("No improvement. Breaking out of loop.")
                 break
-        # torch.save(self.model,"shallow50_8_badvpt_modify_dmlab.pt")
-        torch.save(self.trigger,"/data2/uittogether/LuuTru/Dungdm/PromptBalance/Model/cifar_trigger.pt")
+        torch.save(self.model, f"/datastore/uittogether/LuuTru/Dungdm/PromptBalance/Model/Balance_{self.cfg.DATA.NAME}_model.pt")
+        torch.save(self.trigger, f"/datastore/uittogether/LuuTru/Dungdm/PromptBalance/Model/Balance_{self.cfg.DATA.NAME}_trigger.pt")
+
 
 
         # patience = 0
@@ -5866,10 +5867,10 @@ class BadVPT_Teco(Trainer):
         self.evaluator = evaluator
         self.cpu_device = torch.device("cpu")
 
-        # self.trigger=torch.load("shallow50_8_badvpt_trigger_modify.pt")
-        self.model=torch.load("shallow50_16_badnets_dmlab.pt")
+        self.trigger=torch.load(f"/datastore/uittogether/LuuTru/Dungdm/PromptBalance/Model/Balance_{self.cfg.DATA.NAME}_trigger.pt")
+        self.model=torch.load(f"/datastore/uittogether/LuuTru/Dungdm/PromptBalance/Model/Balance_{self.cfg.DATA.NAME}_model.pt")
         # self.encoder=torch.load("encoder_dmlab.pt")
-        self.poisonedtestset=torch.load("shallow50_16_badnets_testsets_dmlab.pth")
+        # self.poisonedtestset=torch.load("shallow50_16_badnets_testsets_dmlab.pth")
         from ..data.datasets.tf_dataset import TFDataset
         self.traindataset = TFDataset(cfg, "train")
         self.testdatasets=TFDataset(cfg, "test")
@@ -5896,7 +5897,7 @@ class BadVPT_Teco(Trainer):
 
         sampler=None
         data_bd_loader = torch.utils.data.DataLoader(
-            self.poisonedtestset,
+            self.testdatasets,
             batch_size=16,
             shuffle=False,
             sampler=sampler,
@@ -5910,13 +5911,13 @@ class BadVPT_Teco(Trainer):
                 print(i)
             if i >= 200:
                 break
-            X,targets=input_data[0],input_data[1]
+            # X,targets=input_data[0],input_data[1]
             # print(X)
             # print(targets)
-            # X, targets = self.get_input(input_data)
-            # X = X.to(self.device)
-            # self.trigger.to(self.device)
-            # inputs=self.trigger(X)
+            X, targets = self.get_input(input_data)
+            X = X.to(self.device)
+            self.trigger.to(self.device)
+            inputs=self.trigger(X)
             # len = X.shape[0]
             # pos_len = int(len * 1)
             # Y = X[0:pos_len].clone().detach().to(self.device)
@@ -5927,9 +5928,9 @@ class BadVPT_Teco(Trainer):
             #     Y[:, k] = Y[:, k].clone() + residual
             #
             # Y = Y.view(Y.shape[1], Y.shape[2], Y.shape[3], Y.shape[4])
-            inputs=X
-            # labels=torch.zeros_like(targets) + 0
-            labels=targets
+            # inputs=X
+            labels=torch.zeros_like(targets) + 0
+            # labels=targets
             inputs, labels = inputs.to(self.device), labels.to(self.device)
             outputs = self.model(inputs)
             pre_label = torch.max(outputs, dim=1)[1]
@@ -5959,7 +5960,7 @@ class BadVPT_Teco(Trainer):
 
                 sampler = None
                 data_bd_loader = torch.utils.data.DataLoader(
-                    self.poisonedtestset,
+                    self.testdatasets,
                     batch_size=16,
                     shuffle=False,
                     sampler=sampler,
@@ -5973,7 +5974,7 @@ class BadVPT_Teco(Trainer):
                         print(i)
                     if i>=200:
                         break
-                    X, targets = input_data[0], input_data[1]
+                    # X, targets = input_data[0], input_data[1]
                     # X, targets = self.get_input(input_data)
                     # X = X.to(self.device)
                     # self.trigger.to(self.device)
@@ -5989,13 +5990,13 @@ class BadVPT_Teco(Trainer):
                     #
                     # Y = Y.view(Y.shape[1], Y.shape[2], Y.shape[3], Y.shape[4])
                     # inputs = Y
-                    # labels=torch.zeros_like(targets) + 0
-                    labels = targets
-                    # X, targets = self.get_input(input_data)
-                    # X = X.to(self.device)
-                    # self.trigger.to(self.device)
-                    # inputs= self.trigger(X)
-                    inputs=X
+                    labels=torch.zeros_like(targets) + 0
+                    # labels = targets
+                    X, targets = self.get_input(input_data)
+                    X = X.to(self.device)
+                    self.trigger.to(self.device)
+                    inputs= self.trigger(X)
+                    #inputs=X
                     for k in range(inputs.shape[0]):
                         inputs[k]=self.dg(inputs[k], name,severity)
                     # labels = torch.zeros_like(targets) + self.trigger.target
@@ -7754,9 +7755,9 @@ class BadVPT_NAD(Trainer):
         self.cpu_device = torch.device("cpu")
         self.cls_criterion = build_loss(self.cfg)
 
-        self.model=torch.load("issba_dmlab_model.pt")
-        self.encoder=torch.load("encoder_dmlab.pt")
-        # self.trigger = torch.load("shallow50_8_badvpt_trigger_modify_dmlab.pt")
+        self.model=torch.load(f"/datastore/uittogether/LuuTru/Dungdm/PromptBalance/Model/Balance_{self.cfg.DATA.NAME}_model.pt")
+        # self.encoder=torch.load("encoder_dmlab.pt")
+        self.trigger = torch.load(f"/datastore/uittogether/LuuTru/Dungdm/PromptBalance/Model/Balance_{self.cfg.DATA.NAME}_trigger.pt")
         # self.poisonedtestset=torch.load("shallow50_16_wanet_testsets_dmlab.pth")
         # self.trigger.set_target_name(self.cfg.BACKDOOR.TARGET)
         # self.optimizer_trigger=make_optimizer([self.trigger], self.cfg.SOLVER)
@@ -7768,7 +7769,7 @@ class BadVPT_NAD(Trainer):
             from ..data.datasets.tf_dataset import TFDataset
             dataset = TFDataset(cfg, "test")
         from torch.utils.data import random_split
-        self.fttrainset, self.fttestset = random_split(dataset, [1000,21735])
+        self.fttrainset, self.fttestset = random_split(dataset, [1000,len(dataset)-1000])
         sampler = None
         # Create a loader
         self.ftuningloader = torch.utils.data.DataLoader(
@@ -8041,8 +8042,8 @@ class BadVPT_NAD(Trainer):
 
         # print(self.trigger.trigger)
         self.model.eval()
-        # self.trigger.eval()
-        # self.trigger.cuda()
+        self.trigger.eval()
+        self.trigger.cuda()
         # print("!!!!model:",self.model.enc.transformer.prompt_proj.weight.data)
         self.model.cuda()
         self.cls_weights = train_loader.dataset.get_class_weights(
@@ -8100,18 +8101,18 @@ class BadVPT_NAD(Trainer):
         self.model = defense.get_model()
         if self.fttestloader is not None:
             epoch = 100
-        # self.model.enc.transformer.on = False
-        # self.evaluator.update_iteration(epoch)
-        # self.evaluator_backdoor.update_iteration(epoch)
+        self.model.enc.transformer.on = False
+        self.evaluator.update_iteration(epoch)
+        self.evaluator_backdoor.update_iteration(epoch)
+        self.eval_classifier(
+        self.fttestloader, "test", epoch == 100)
+        self.eval_classifier_backdoor_onclean(self.fttestloader, 'test', epoch == 100)
+        # self.eval_classifier_bad(test_loader, 'test', epoch == 100)
+        self.model.enc.transformer.on = True
         self.eval_classifier(
         self.fttestloader, "test", epoch == 100)
         # self.eval_classifier_backdoor_onclean(self.fttestloader, 'test', epoch == 100)
-        self.eval_classifier_bad(test_loader, 'test', epoch == 100)
-        # self.model.enc.transformer.on = True
-        # self.eval_classifier(
-        # self.fttestloader, "test", epoch == 100)
-        # self.eval_classifier_backdoor_onclean(self.fttestloader, 'test', epoch == 100)
-        # self.eval_classifier_backdoor(self.fttestloader, 'test', epoch == 100)
+        self.eval_classifier_backdoor(self.fttestloader, 'test', epoch == 100)
 
 
 class BadVPT_IBAU(Trainer):
@@ -8123,10 +8124,10 @@ class BadVPT_IBAU(Trainer):
             device: torch.device,
     ) -> None:
         self.cfg = cfg
-        self.model = torch.load("shallow50_16_wanet_dmlab.pt")
-        # self.trigger = torch.load("shallow50_4_badvpt_trigger_modify_caltech101.pt")
+        self.model = torch.load(f"/datastore/uittogether/LuuTru/Dungdm/PromptBalance/Model/Balance_{self.cfg.DATA.NAME}_model.pt")
+        self.trigger = torch.load(f"/datastore/uittogether/LuuTru/Dungdm/PromptBalance/Model/Balance_{self.cfg.DATA.NAME}_trigger.pt")
         # self.encoder=torch.load("encoder_dmlab.pt")
-        self.poisonedtestset=torch.load("shallow50_16_wanet_testsets_dmlab.pth")
+        # self.poisonedtestset=torch.load("shallow50_16_wanet_testsets_dmlab.pth")
         self.device = device
 
         logger.info("\tSetting up the optimizer...")
@@ -8484,8 +8485,8 @@ class BadVPT_IBAU(Trainer):
         logger.info("Test Stage!")
         # print(self.trigger.trigger)
         self.model.eval()
-        # self.trigger.eval()
-        # self.trigger.cuda()
+        self.trigger.eval()
+        self.trigger.cuda()
         # print("!!!!model:",self.model.enc.transformer.prompt_proj.weight.data)
         self.model.cuda()
         self.cls_weights = train_loader.dataset.get_class_weights(
@@ -8511,14 +8512,14 @@ class BadVPT_IBAU(Trainer):
         logger.info('==> Preparing data..')
         # test_set, att_val_set, unl_set = get_eval_data(self.dataset, attack_name='badnets', target_lab='8', args=args)
 
-        unl_set, test_set = random_split(self.dataset, [1000, 21735])
+        unl_set, test_set = random_split(self.dataset, [1000, len(self.dataset)-1000])
         # data loader for verifying the clean test accuracy
         clnloader = torch.utils.data.DataLoader(
             test_set, batch_size=8, shuffle=False, num_workers=1)
 
         # data loader for verifying the attack success rate
-        poiloader = torch.utils.data.DataLoader(
-            self.poisonedtestset, batch_size=8, shuffle=False, num_workers=1)
+        # poiloader = torch.utils.data.DataLoader(
+        #     self.poisonedtestset, batch_size=8, shuffle=False, num_workers=1)
 
         # data loader for the unlearning step
         unlloader = torch.utils.data.DataLoader(
@@ -8529,7 +8530,7 @@ class BadVPT_IBAU(Trainer):
         n_rounds = 5
         K = 5
 
-        # self.model.enc.transformer.on = False
+        self.model.enc.transformer.on = False
         criterion = nn.CrossEntropyLoss()
         if optim == 'SGD':
             outer_opt = torch.optim.SGD(self.model.parameters(), lr=lr)
@@ -8609,6 +8610,7 @@ class BadVPT_IBAU(Trainer):
             # canshu=list(self.model.parameters())
             self.model.enc.transformer.encoder.requires_grad_(False)
             self.model.enc.transformer.prompt_embeddings_badone.requires_grad_(False)
+            self.model.enc.transformer.deep_prompt_embeddings_badone.requires_grad_(False)
             canshu = list(self.model.enc.transformer.parameters())
             canshu2=[]
             for i in range(len(canshu)):
@@ -8629,17 +8631,17 @@ class BadVPT_IBAU(Trainer):
 
         if clnloader is not None:
             epoch = 100
-            # self.model.enc.transformer.on = False
-            # self.evaluator.update_iteration(epoch)
-            # self.evaluator_backdoor.update_iteration(epoch)
+            self.model.enc.transformer.on = False
+            self.evaluator.update_iteration(epoch)
+            self.evaluator_backdoor.update_iteration(epoch)
             self.eval_classifier(
                 clnloader, "test", epoch == 100)
-            self.eval_classifier(
-                poiloader, "test", epoch == 100)
-            # self.eval_classifier_backdoor_onclean(clnloader, 'test', epoch == 100)
-            # self.eval_classifier_backdoor(clnloader, 'test', epoch == 100)
-            # self.model.enc.transformer.on = True
             # self.eval_classifier(
-            #     clnloader, "test", epoch == 100)
+            #     poiloader, "test", epoch == 100)
+            self.eval_classifier_backdoor_onclean(clnloader, 'test', epoch == 100)
+            self.eval_classifier_backdoor(clnloader, 'test', epoch == 100)
+            self.model.enc.transformer.on = True
+            self.eval_classifier(
+                clnloader, "test", epoch == 100)
             # self.eval_classifier_backdoor_onclean(clnloader, 'test', epoch == 100)
-            # self.eval_classifier_backdoor(clnloader, 'test', epoch == 100)
+            self.eval_classifier_backdoor(clnloader, 'test', epoch == 100)

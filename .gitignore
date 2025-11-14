@@ -4,3 +4,13 @@ Output
 Output_32_100
 Output_32_50
 Output_32_150
+Output_Defense
+run.sh
+teco_pred_result_caltech101.pth
+teco_pred_result_cifar.pth
+teco_pred_result_dmlab.pth
+teco_pred_result_eurosat.pth
+defense_result_roc_caltech101.pt
+defense_result_roc_cifar.pt
+defense_result_roc_dmlab.pt
+defense_result_roc_eurosat.pt

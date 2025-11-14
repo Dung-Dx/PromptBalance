@@ -16,6 +16,6 @@ def process(file_data):
 
 if __name__ == '__main__':
     
-    AUROC_Score(process("../../dmlab_wanet.npy"),
-               process("../../dmlab_modify_benign.npy"), "dmlab")
+    AUROC_Score(process("/datastore/uittogether/LuuTru/Dungdm/PromptBalance/Model/Balance_vtab-eurosat_backdoor.npy"),
+               process("/datastore/uittogether/LuuTru/Dungdm/PromptBalance/Model/Balance_vtab-eurosat_clean.npy"), "dmlab")
   
